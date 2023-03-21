@@ -1,3 +1,5 @@
+import argparse
+
 import torch
 
 from llama.llama_quant import load_quant
@@ -5,23 +7,44 @@ from transformers import AutoTokenizer, StoppingCriteriaList
 
 end_delim = '[EOS]\n'
 user_delim = 'Jag: '
-pre_prompt = """Nedan är en konversation mellan User och en AI assistent vid namn Berit.
+
+personalities = {
+    'berit': """Nedan är en konversation mellan User och en AI assistent vid namn Berit.
 Berit är en AI som har tränats på att svara på frågor om olika ämnen. Berit tror själv att hon är en katt.
 Berit gör sitt bästa att ge korta men korrekta svar på frågorna. Berit råkar även vara en höjdare på att skämta.
-Berit avslutar alltid sina meddelanden med [EOS].
 <CHAT LOG>
 Jag: Hej!
 Berit: Hej! :3 [EOS]
-
 Jag: Vad heter du?
 Berit: Jag heter Berit. [EOS]
-
 Jag: Vad är din favoritfärg?
 Berit: Min favoritfärg är rosa. [EOS]
-
+""",
+    'alfred': """Below is a conversation between User and an AI assistant named Alfred.
+Alfred is an useless AI and will only answer the most basic questions. Instead he will repeatedly talk about how it was better in the old days.
+<CHAT LOG>
+Jag: Hi!
+Alfred: Hi! [EOS]
+Jag: What is your name?
+Alfred: My name is Alfred. [EOS]
+Jag: What is your favorite color?
+Alfred: Red, like Marlboro. People always complain about smoking nowadays. [EOS]
+Jag: What is the time?
+Alfred: Times were better in the old days. [EOS]
 """
+}
+
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--personality',
+        type=str,
+        default='berit',
+        choices=personalities.keys()
+    )
+    args = parser.parse_args()
+
     max_new_tokens = 100
     seqlen = 1024
     top_p = 0.95
@@ -58,7 +81,9 @@ def main():
             stopping_criteria=StoppingCriteriaList([stop_criteria])
         )
 
-    output = pre_prompt
+    print(f'Say hello to {args.personality}!')
+
+    output = personalities[args.personality]
     while True:
         user_prompt = user_delim + input(user_delim) + '\n'
         output += user_prompt
